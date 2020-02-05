@@ -1,0 +1,53 @@
+version: 2.1
+aliases:
+  - &setup-settings-xml
+    run:
+      name: Setup settings.xml
+      command: |
+        mkdir -p ~/.m2
+        cp .circleci/settings.xml ~/.m2/settings.xml
+jobs:
+  test:
+    docker:
+      - image: circleci/openjdk:11.0.3-jdk-stretch
+    steps:
+      - checkout
+      - *setup-settings-xml
+      - run:
+          name: Run tests
+          command: mvn --batch-mode test
+      - run:
+          name: Upload coverage report to Codecov
+          command: |
+            curl -s https://codecov.io/bash | bash -s -- \
+              -t ${CODECOV_TOKEN} \
+              -n ${CIRCLE_BUILD_NUM} \
+              -Z || echo 'Codecov upload failed'
+  deploy:
+    docker:
+      - image: circleci/openjdk:11.0.3-jdk-stretch
+    steps:
+      - checkout
+      - *setup-settings-xml
+      - run:
+          name: Import GPG key
+          command: echo "${OSSRH_GPG_KEY}" | base64 --decode | gpg --import --no-tty --batch --yes
+      - run:
+          name: Test, package, verify and deploy
+          command:
+            mvn --batch-mode --activate-profiles release deploy
+workflows:
+  version: 2
+  default:
+    jobs:
+      - test:
+          context: default
+      - deploy:
+          context: default
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: master
