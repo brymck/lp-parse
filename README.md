@@ -6,6 +6,8 @@ lp-parse
 
 Parser for LP files.
 
+This is designed to make it easier to evaluate the constructions of models in optimization libraries such as CPLEX.
+
 Usage
 -----
 
