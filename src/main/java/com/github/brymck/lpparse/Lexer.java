@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 class Lexer implements Iterable<Token> {
   private final @NotNull TokenIterator tokenIterator;
 
-  protected Lexer(@NotNull InputStream inputStream) {
+  public Lexer(@NotNull InputStream inputStream) {
     tokenIterator = new TokenIterator(inputStream);
   }
 

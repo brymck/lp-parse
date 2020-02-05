@@ -5,13 +5,11 @@ import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
 final class TokenIterator implements Iterator<Token> {
-  @NotNull BufferedReader reader;
-  boolean closed;
-  @NotNull Queue<@NotNull Token> tokens;
+  private @NotNull BufferedReader reader;
+  private @NotNull Queue<@NotNull Token> tokens;
 
   protected TokenIterator(@NotNull InputStream inputStream) {
     reader = new BufferedReader(new InputStreamReader(inputStream));
-    closed = false;
     tokens = new LinkedList<>();
   }
 

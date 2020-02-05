@@ -7,14 +7,14 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public final class Problem {
-  private @NotNull Statement objective;
+  private @NotNull Objective objective;
   private @NotNull List<@NotNull Bounds> bounds;
   private @NotNull List<@NotNull Variable> generals;
   private @NotNull List<@NotNull Variable> semiContinuous;
   private @NotNull List<@NotNull Statement> subjectTo;
 
   public Problem(
-      @NotNull Statement objective,
+      @NotNull Objective objective,
       @NotNull List<@NotNull Bounds> bounds,
       @NotNull List<@NotNull Variable> generals,
       @NotNull List<@NotNull Variable> semiContinuous,
@@ -26,12 +26,12 @@ public final class Problem {
     this.subjectTo = subjectTo;
   }
 
-  public @NotNull Statement getObjective() {
+  public @NotNull Objective getObjective() {
     return objective;
   }
 
-  protected void setObjective(@NotNull Statement statement) {
-    objective = statement;
+  protected void setObjective(@NotNull Objective objective) {
+    this.objective = objective;
   }
 
   public @NotNull List<@NotNull Bounds> getBounds() {
@@ -55,25 +55,20 @@ public final class Problem {
     this.subjectTo.add(statement);
   }
 
-  protected void addItemToLatestSubjectTo(@NotNull String item) {
-    Statement statement = this.subjectTo.get(this.subjectTo.size() - 1);
-    statement.addItem(item);
-  }
-
   public @NotNull List<@NotNull Variable> getSemiContinuous() {
     return unmodifiableList(semiContinuous);
   }
 
-  protected void addSemiContinuousVariable(@NotNull Variable variable) {
-    semiContinuous.add(variable);
+  protected void setSemiContinuous(@NotNull List<@NotNull Variable> variables) {
+    this.semiContinuous = variables;
   }
 
   public @NotNull List<@NotNull Variable> getGenerals() {
     return unmodifiableList(generals);
   }
 
-  protected void addGeneralsVariable(@NotNull Variable variable) {
-    generals.add(variable);
+  protected void setGenerals(@NotNull List<@NotNull Variable> variables) {
+    this.generals = variables;
   }
 
   @Override
@@ -113,21 +108,21 @@ public final class Problem {
   }
 
   public static class Builder {
-    private @NotNull Statement objective;
+    private @NotNull Objective objective;
     private @NotNull List<@NotNull Bounds> bounds;
     private @NotNull List<@NotNull Variable> generals;
     private @NotNull List<@NotNull Variable> semiContinuous;
     private @NotNull List<@NotNull Statement> subjectTo;
 
     private Builder() {
-      objective = new Statement("obj", new ArrayList<>());
+      objective = new Objective(Sense.MINIMIZE, new Statement("", new ArrayList<>()));
       bounds = new ArrayList<>();
       generals = new ArrayList<>();
       semiContinuous = new ArrayList<>();
       subjectTo = new ArrayList<>();
     }
 
-    public Builder withObjective(@NotNull Statement objective) {
+    public Builder withObjective(@NotNull Objective objective) {
       this.objective = objective;
       return this;
     }

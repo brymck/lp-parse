@@ -37,13 +37,22 @@ final class StateMachine {
     return statement;
   }
 
-  public @NotNull Statement newStatement(@NotNull String label) {
-    statement = new Statement(label, new ArrayList<>());
+  public @NotNull Statement newStatement() {
+    statement = new Statement("", new ArrayList<>());
     return statement;
   }
 
   public @NotNull Bounds newBounds() {
     bounds = new Bounds(new ArrayList<>());
     return bounds;
+  }
+
+  public @NotNull List<@NotNull Variable> getVariables() {
+    return variables;
+  }
+
+  public @NotNull List<@NotNull Variable> newVariables() {
+    variables = new ArrayList<>();
+    return variables;
   }
 }

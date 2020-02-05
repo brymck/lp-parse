@@ -3,38 +3,48 @@ package com.github.brymck.lpparse;
 import static com.github.brymck.lpparse.ParserState.*;
 import static com.github.brymck.lpparse.TokenType.*;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** @author Bryan McKelvey */
 public class Parser {
-  private @NotNull ParserState errorState(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState errorState(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     String message = "invalid token " + token.toString() + " for state " + stateMachine.getState();
     throw new RuntimeException(message);
   }
 
-  private @NotNull ParserState processKeywordToken(StateMachine stateMachine, Token token) {
-    @Nullable ParserState nextState = null;
+  private @NotNull ParserState processKeywordToken(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     Keyword keyword = Keyword.valueOf(token.getValue());
     Problem problem = stateMachine.getProblem();
+    Objective objective;
+    Statement statement;
+    List<Variable> variables;
     switch (keyword) {
       case MAXIMIZE:
-        problem.setObjective(new Statement("obj", new ArrayList<>()));
+        statement = stateMachine.newStatement();
+        objective = new Objective(Sense.MAXIMIZE, statement);
+        problem.setObjective(objective);
         return OBJECTIVE;
       case MINIMIZE:
-        problem.setObjective(new Statement("obj", new ArrayList<>()));
+        statement = stateMachine.newStatement();
+        objective = new Objective(Sense.MINIMIZE, statement);
+        problem.setObjective(objective);
         return OBJECTIVE;
       case BOUNDS:
         return BOUNDS_STATEMENT_NEW_LINE;
       case SUBJECT_TO:
         return SUBJECT_TO;
       case SEMI_CONTINUOUS:
+        variables = stateMachine.newVariables();
+        problem.setSemiContinuous(variables);
         return SEMI_CONTINUOUS;
       case GENERALS:
+        variables = stateMachine.newVariables();
+        problem.setGenerals(variables);
         return GENERALS;
       case END:
         return END;
@@ -42,34 +52,29 @@ public class Parser {
     throw new IllegalStateException("unknown keyword: " + keyword);
   }
 
-  private @NotNull ParserState processObjectiveLabel(StateMachine stateMachine, Token token) {
-    Problem problem = stateMachine.getProblem();
-    problem.getObjective().setLabel(token.getValue());
+  private @NotNull ParserState processObjectiveLabel(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
+    stateMachine.getStatement().setLabel(token.getValue());
     return OBJECTIVE_STATEMENT;
   }
 
-  private @NotNull ParserState processObjectiveStatementItem(
-      StateMachine stateMachine, Token token) {
-    Problem problem = stateMachine.getProblem();
-    problem.getObjective().addItem(token.getValue());
+  private @NotNull ParserState processStatementItem(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
+    stateMachine.getStatement().addItem(token.getValue());
     return stateMachine.getState();
   }
 
-  private @NotNull ParserState processSubjectToLabel(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState processSubjectToLabel(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     Problem problem = stateMachine.getProblem();
-    Statement statement = stateMachine.newStatement(token.getValue());
+    Statement statement = stateMachine.newStatement();
+    statement.setLabel(token.getValue());
     problem.addSubjectTo(statement);
     return SUBJECT_TO_STATEMENT;
   }
 
-  private @NotNull ParserState processSubjectToStatementItem(
-      StateMachine stateMachine, Token token) {
-    Problem problem = stateMachine.getProblem();
-    problem.addItemToLatestSubjectTo(token.getValue());
-    return stateMachine.getState();
-  }
-
-  private @NotNull ParserState processBoundsItemOnNewLine(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState processBoundsItemOnNewLine(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     Problem problem = stateMachine.getProblem();
     List<String> items = new ArrayList<>();
     items.add(token.getValue());
@@ -78,36 +83,31 @@ public class Parser {
     return BOUNDS_STATEMENT;
   }
 
-  private @NotNull ParserState processBoundsItem(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState processBoundsItem(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     Problem problem = stateMachine.getProblem();
     problem.addItemToLatestBounds(token.getValue());
     return BOUNDS_STATEMENT;
   }
 
-  private @NotNull ParserState processBoundsLineBreak(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState processBoundsLineBreak(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     return BOUNDS_STATEMENT_NEW_LINE;
   }
 
-  private @NotNull ParserState processGeneralsVariable(StateMachine stateMachine, Token token) {
-    Problem problem = stateMachine.getProblem();
+  private @NotNull ParserState processVariable(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     Variable variable = new Variable(token.getValue());
-    problem.addGeneralsVariable(variable);
+    stateMachine.getVariables().add(variable);
     return stateMachine.getState();
   }
 
-  private @NotNull ParserState processSemiContinuousVariable(
-      StateMachine stateMachine, Token token) {
-    Problem problem = stateMachine.getProblem();
-    Variable variable = new Variable(token.getValue());
-    problem.addSemiContinuousVariable(variable);
+  private @NotNull ParserState noOp(@NotNull StateMachine stateMachine, @NotNull Token token) {
     return stateMachine.getState();
   }
 
-  private @NotNull ParserState noOp(StateMachine stateMachine, Token token) {
-    return stateMachine.getState();
-  }
-
-  private @NotNull ParserState processToken(StateMachine stateMachine, Token token) {
+  private @NotNull ParserState processToken(
+      @NotNull StateMachine stateMachine, @NotNull Token token) {
     TokenType tokenType = token.getType();
     switch (stateMachine.getState()) {
       case START:
@@ -128,13 +128,8 @@ public class Parser {
         if (tokenType == KEYWORD) {
           return processKeywordToken(stateMachine, token);
         } else if (tokenType == VARIABLE) {
-          return processObjectiveStatementItem(stateMachine, token);
+          return processStatementItem(stateMachine, token);
         } else if (tokenType == LINE_BREAK) {
-          return noOp(stateMachine, token);
-        }
-        break;
-      case BOUNDS:
-        if (tokenType == LINE_BREAK) {
           return noOp(stateMachine, token);
         }
         break;
@@ -167,25 +162,17 @@ public class Parser {
         } else if (tokenType == LABEL) {
           return processSubjectToLabel(stateMachine, token);
         } else if (tokenType == VARIABLE) {
-          return processSubjectToStatementItem(stateMachine, token);
+          return processStatementItem(stateMachine, token);
         } else if (tokenType == LINE_BREAK) {
           return noOp(stateMachine, token);
         }
         break;
       case GENERALS:
-        if (tokenType == KEYWORD) {
-          return processKeywordToken(stateMachine, token);
-        } else if (tokenType == VARIABLE) {
-          return processGeneralsVariable(stateMachine, token);
-        } else if (tokenType == LINE_BREAK) {
-          return noOp(stateMachine, token);
-        }
-        break;
       case SEMI_CONTINUOUS:
         if (tokenType == KEYWORD) {
           return processKeywordToken(stateMachine, token);
         } else if (tokenType == VARIABLE) {
-          return processSemiContinuousVariable(stateMachine, token);
+          return processVariable(stateMachine, token);
         } else if (tokenType == LINE_BREAK) {
           return noOp(stateMachine, token);
         }
@@ -200,7 +187,7 @@ public class Parser {
   }
 
   @NotNull
-  Problem parse(@NotNull InputStream inputStream) throws IOException {
+  Problem parse(@NotNull InputStream inputStream) {
     StateMachine stateMachine = new StateMachine();
     Lexer lexer = new Lexer(inputStream);
     lexer.forEach(

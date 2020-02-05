@@ -4,7 +4,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class Bounds {
-  protected @NotNull List<@NotNull String> items;
+  private @NotNull List<@NotNull String> items;
 
   public Bounds(@NotNull List<@NotNull String> items) {
     this.items = items;

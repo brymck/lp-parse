@@ -1,6 +1,7 @@
 package com.github.brymck.lpparse;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,8 +9,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParserTest {
   private Parser parser = new Parser();
@@ -26,20 +28,19 @@ public class ParserTest {
   @Test
   void blah() throws IOException {
     Problem actual = parser.parse(stream);
-    // List<String> metadataItems = Arrays.asList("\\ENCODING=ISO-8859-1", "\\Problem name:
-    // ilog.cplex");
-    // List<String> boundsItems = Collections.emptyList();
     Problem expected =
-        Problem.builder()
-            .withObjective(new Statement("obj", Arrays.asList("-", "x", "-", "y")))
+      Problem.builder()
+            .withObjective(
+                new Objective(
+                    Sense.MINIMIZE, new Statement("obj", asList("-", "x", "-", "y"))))
             .withSubjectTo(
-                Arrays.asList(new Statement("blah", Arrays.asList("x", "-", "y", "=", "0"))))
+                asList(new Statement("blah", asList("x", "-", "y", "=", "0"))))
             .withBounds(
-                Arrays.asList(
-                    new Bounds(Arrays.asList("0", "<=", "x", "<=", "1")),
-                    new Bounds(Arrays.asList("0.2", "<=", "y", "<=", "1"))))
-            .withGenerals(Arrays.asList(new Variable("x")))
-            .withSemiContinuous(Arrays.asList(new Variable("y")))
+                asList(
+                    new Bounds(asList("0", "<=", "x", "<=", "1")),
+                    new Bounds(asList("0.2", "<=", "y", "<=", "1"))))
+            .withGenerals(asList(new Variable("x")))
+            .withSemiContinuous(asList(new Variable("y")))
             .build();
     assertThat(actual).isEqualTo(expected);
   }
